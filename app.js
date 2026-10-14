@@ -48,12 +48,27 @@
     return card;
   }
 
-  function save(nextMemes) {
+  function readSavedMemes() {
+    const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    if (!Array.isArray(saved) || !saved.every(isMeme) ||
+        new Set(saved.map((meme) => meme.id)).size !== saved.length) {
+      throw new Error("Invalid saved memes");
+    }
+    return saved;
+  }
+
+  function render() {
+    htmx.swap(grid, memes.map((meme) => createCard(meme).outerHTML).join(""), { swapStyle: "innerHTML" });
+    empty.hidden = memes.length > 0;
+  }
+
+  function save(update) {
     if (!storageReady) {
       announce("Browser storage is unavailable or unreadable. Check this site's storage settings before making changes.");
       return false;
     }
     try {
+      const nextMemes = update(readSavedMemes());
       localStorage.setItem(storageKey, JSON.stringify(nextMemes));
       memes = nextMemes;
       return true;
@@ -129,36 +144,37 @@
         image: selectedImage,
         description: description.value.trim()
       };
-      if (!save([meme, ...memes])) return;
-      htmx.swap(grid, createCard(meme).outerHTML, { swapStyle: "afterbegin" });
+      if (!save((saved) => [meme, ...saved])) return;
+      render();
       form.reset();
       ++selectionVersion;
       selectedImage = "";
       preview.hidden = true;
       preview.removeAttribute("src");
-      empty.hidden = true;
       announce("Meme added.");
     } else if (verb === "delete" && grid.contains(elt)) {
       const card = elt.closest(".meme");
-      if (!card || !save(memes.filter((meme) => meme.id !== card.id))) return;
-      htmx.swap(card, "", { swapStyle: "outerHTML" });
-      empty.hidden = memes.length > 0;
+      if (!card || !save((saved) => saved.filter((meme) => meme.id !== card.id))) return;
+      render();
       announce("Meme deleted.");
     }
   });
 
-  try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    if (!Array.isArray(saved) || !saved.every(isMeme) ||
-        new Set(saved.map((meme) => meme.id)).size !== saved.length) {
-      throw new Error("Invalid saved memes");
+  function load() {
+    try {
+      memes = readSavedMemes();
+      storageReady = true;
+      grid.replaceChildren(...memes.map(createCard));
+      empty.hidden = memes.length > 0;
+      if (window.htmx) htmx.process(grid);
+    } catch {
+      storageReady = false;
+      announce("Saved memes could not be loaded. Storage may be disabled or damaged. Existing data has not been overwritten.");
     }
-    memes = saved;
-    storageReady = true;
-    grid.replaceChildren(...memes.map(createCard));
-    empty.hidden = memes.length > 0;
-    if (window.htmx) htmx.process(grid);
-  } catch {
-    announce("Saved memes could not be loaded. Storage may be disabled or damaged. Existing data has not been overwritten.");
   }
+
+  window.addEventListener("storage", (event) => {
+    if (event.storageArea === localStorage && (event.key === storageKey || event.key === null)) load();
+  });
+  load();
 })();
