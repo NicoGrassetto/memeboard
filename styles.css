@@ -1,0 +1,78 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  padding: 1rem;
+}
+
+main {
+  max-width: 64rem;
+  margin: auto;
+}
+
+form, .meme {
+  padding: 1rem;
+  border: 1px solid #888;
+  border-radius: .5rem;
+}
+
+form {
+  display: grid;
+  gap: .75rem;
+  max-width: 32rem;
+}
+
+form h2, .meme p {
+  margin: 0;
+}
+
+input, textarea, button {
+  font: inherit;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+button {
+  cursor: pointer;
+  padding: .5rem .75rem;
+}
+
+#memes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 1rem;
+}
+
+.meme {
+  display: grid;
+  align-content: start;
+  gap: .75rem;
+  min-width: 0;
+}
+
+img {
+  display: block;
+  width: 100%;
+  max-height: 24rem;
+  object-fit: contain;
+}
+
+#preview {
+  max-height: 12rem;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.meme p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+#status {
+  min-height: 1.5em;
+}
